@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Helíaco · Tu fecha, en el cielo</title>
-<meta name="description" content="Cuadros con fotografías reales del telescopio espacial Hubble: la foto que hizo el día de vuestra fecha especial (un cumpleaños, un aniversario, San Valentín…), enmarcada. Prelanzamiento: apúntate y te avisamos.">
+<meta name="description" content="Cuadros con fotografías reales del telescopio espacial Hubble: la foto que hizo el día de vuestra fecha especial (un cumpleaños, el día que os conocisteis, vuestra boda…), enmarcada. Prelanzamiento: apúntate y te avisamos.">
 <meta property="og:title" content="Helíaco · Tu fecha, en el cielo">
 <meta property="og:description" content="La foto que hizo el telescopio Hubble en vuestra fecha especial, enmarcada. Apúntate y te avisamos cuando lleguen las primeras unidades.">
 <meta property="og:image" content="https://cdn.shopify.com/s/files/1/1084/6824/0724/files/heliaco-web-nebulosa-de-la-laguna.jpg?width=1200">
@@ -214,6 +214,8 @@ footer.ftr { border-top: 1px solid var(--line); padding-block: 48px 28px; font-s
 .zoom-nota { position: absolute; right: 10px; bottom: 8px; font-size: 12px; color: var(--muted); }
 .info .vendor { font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
 .info h1 { font-size: clamp(34px, 4vw, 46px); margin: 6px 0 10px; }
+.rich .regalo { margin-top: 14px; font-size: 16px; color: var(--fg); }
+.aviso-campana { border-left: 3px solid var(--gold); padding: 10px 14px; background: var(--soft); font-size: 15px; margin-bottom: 18px; }
 .info .subtitulo { color: var(--muted); margin: -4px 0 12px; }
 .info .price { font-size: 20px; letter-spacing: .06em; }
 .info .tax { font-size: 13px; color: var(--muted); margin: 4px 0 20px; }
@@ -489,14 +491,28 @@ const DISENOS = [
 ];
 const MOLDURA_CM = 2;   // ancho aproximado de la moldura de los marcos de Gelato
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-// Ocasiones del personalizado: cambian el ejemplo de nombre y quedan apuntadas en el registro (etiqueta «ocasion-…»)
+// Qué fecha lleva el cuadro: cambia el ejemplo de nombre y queda apuntada en el registro (etiqueta «ocasion-…»).
+// San Valentín, Navidad o el Día de la Madre no van aquí: son momentos de regalar, y el cuadro lleva una fecha vuestra.
 const OCASIONES = [
-  { v: "Cumpleaños", nombre: "Martina" }, { v: "Aniversario", nombre: "Ana & Luis" }, { v: "San Valentín", nombre: "Ana & Luis" },
-  { v: "Nacimiento", nombre: "Lucía" }, { v: "Boda", nombre: "Ana & Luis" }, { v: "Otra fecha", nombre: "Martina" },
+  { k: "cumpleanos", v: "Cumpleaños", nombre: "Martina" },
+  { k: "os-conocisteis", v: "El día que os conocisteis", nombre: "Ana & Luis" },
+  { k: "aniversario", v: "Aniversario", nombre: "Ana & Luis" },
+  { k: "boda", v: "Boda", nombre: "Ana & Luis" },
+  { k: "nacimiento", v: "Nacimiento", nombre: "Lucía" },
+  { k: "otra", v: "Otra fecha", nombre: "Martina" },
 ];
-// enlaces directos para campañas: #san-valentin abre el personalizado con el 14 de febrero y la ocasión elegida
-const OCASION_RUTA = { "san-valentin": [14, 2, "San Valentín"], "aniversario": [null, null, "Aniversario"],
-  "cumpleanos": [null, null, "Cumpleaños"], "nacimiento": [null, null, "Nacimiento"], "boda": [null, null, "Boda"] };
+// Enlaces para campañas (#san-valentin…): abren el personalizado sin fecha preelegida, con un aviso de qué fecha poner
+const CAMPANAS = {
+  "san-valentin": { k: "san-valentin", ocasion: "os-conocisteis",
+    aviso: "Para San Valentín: elige el día que os conocisteis, vuestra primera cita o vuestro aniversario. El cuadro lleva vuestra fecha, no la del 14 de febrero." },
+  "navidad": { k: "navidad", ocasion: "cumpleanos",
+    aviso: "Para Navidad: elige una fecha suya, como su cumpleaños, el día que nacieron sus hijos o el día de su boda." },
+  "dia-de-la-madre": { k: "dia-de-la-madre", ocasion: "nacimiento",
+    aviso: "Para el Día de la Madre: el día que nacieron sus hijos, su boda o su cumpleaños." },
+  "dia-del-padre": { k: "dia-del-padre", ocasion: "nacimiento",
+    aviso: "Para el Día del Padre: el día que nacieron sus hijos, su boda o su cumpleaños." },
+};
+OCASIONES.forEach(o => { CAMPANAS[o.k] = { ocasion: o.k }; });   // #aniversario, #boda, #nacimiento… eligen el tipo de fecha
 const DIAS_MES = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 const POR_PAGINA = 24;
 const COLECCIONES = {
@@ -621,7 +637,7 @@ function ruta() {
   if (r === "inicio") { portada(); marcar("inicio"); }
   else if (r === "personalizado") { personalizado(); marcar("personalizado"); }
   else if ((m = r.match(/^(?:fecha|cumple)-(\d\d)-(\d\d)$/))) { personalizado(+m[1], +m[2]); marcar("personalizado"); }
-  else if (OCASION_RUTA[r]) { personalizado(...OCASION_RUTA[r]); marcar("personalizado"); }
+  else if (CAMPANAS[r]) { personalizado(null, null, CAMPANAS[r]); marcar("personalizado"); }
   else if (COLECCIONES[r]) { coleccion(r); marcar("coleccion"); }
   else if (r.startsWith("p-") && PH[r.slice(2)]) producto(PH[r.slice(2)]);
   else if (r === "preguntas") { preguntas(); marcar("preguntas"); }
@@ -643,7 +659,7 @@ function portada() {
     <div class="page-width">
       <span class="eyebrow">Fotografías reales del Hubble</span>
       <h1>El cielo de tu fecha especial, enmarcado.</h1>
-      <p>Un cumpleaños, vuestro aniversario, San Valentín o el día que nació tu hijo. Elige la fecha y te enseñamos lo que el telescopio Hubble fotografió un día como ese, con el nombre y la fecha, listo para colgar.</p>
+      <p>Un cumpleaños, el día que os conocisteis, vuestra boda o el día que nació tu hijo. Elige la fecha y te enseñamos lo que el telescopio Hubble fotografió un día como ese, con el nombre y la fecha, listo para colgar.</p>
       <div class="row"><a class="btn light" href="#personalizado">Personalizar el mío</a><a class="btn ghost-light" href="#hubble">Ver la colección</a></div>
     </div>
     <span class="credit-line">Imagen: NASA, ESA y STScI</span>
@@ -653,6 +669,7 @@ function portada() {
     <span class="eyebrow">Helíaco</span>
     <h2>Cada fecha importante tiene su cielo</h2>
     <p>El orto helíaco es el día en que una estrella reaparece en el cielo antes del amanecer. Nosotros buscamos qué miraba el Hubble en vuestra fecha y la convertimos en un cuadro que es solo vuestro.</p>
+    <p class="regalo">Un regalo para San Valentín, Navidad, el Día de la Madre o del Padre, con una fecha que solo es vuestra.</p>
   </div></section>
 
   <section class="s dark"><div class="page-width cumple">
@@ -693,7 +710,7 @@ function portada() {
   <section class="s dark"><div class="page-width">
     <div class="s-head"><h2>Cómo funciona</h2></div>
     <div class="multicol">
-      <div><h3>Elige la fecha</h3><p>Un cumpleaños, vuestro aniversario, San Valentín o el día que nació tu hijo. Hay hasta cinco fotos del Hubble para cada día del año.</p></div>
+      <div><h3>Elige la fecha</h3><p>Un cumpleaños, el día que os conocisteis, vuestra boda o el día que nació tu hijo. Hay hasta cinco fotos del Hubble para cada día del año.</p></div>
       <div><h3>Elige el diseño</h3><p>A sangre con el nombre en el centro, discreto en la esquina, o con margen blanco y la ficha de la foto.</p></div>
       <div><h3>Lo recibes enmarcado</h3><p>Impreso en papel fotográfico semibrillo, con marco de madera y listo para colgar. Envío gratis a la península.</p></div>
     </div>
@@ -786,8 +803,8 @@ function coleccion(clave) {
 }
 
 /* ---------- Opciones ---------- */
-function pillsHTML(nombre, valores, sel, swatches = null) {
-  return `<fieldset><legend>${nombre}: <b id="sel-${nombre}">${esc(sel)}</b></legend><div class="pills">${valores.map((v, i) => {
+function pillsHTML(nombre, valores, sel, swatches = null, leyenda = nombre) {
+  return `<fieldset><legend>${leyenda}${leyenda.endsWith("?") ? "" : ":"} <b id="sel-${nombre}">${esc(sel)}</b></legend><div class="pills">${valores.map((v, i) => {
     const id = `${nombre}-${i}`.replace(/\s/g, "");
     const sw = swatches ? `<span class="muestra" style="background:${swatches[i]}"></span>` : "";
     return `<input type="radio" name="${nombre}" id="${id}" value="${esc(v)}" ${v === sel ? "checked" : ""}><label for="${id}">${sw}${esc(v)}${nombre === "Tamaño" ? " cm" : ""}</label>`;
@@ -878,9 +895,10 @@ function producto(p) {
 }
 
 /* ---------- El cielo de tu fecha (personalizado) ---------- */
-function personalizado(d0, m0, ocasion0) {
-  const s = { d: d0 || 14, m: m0 || 2, y: "", nombre: "", op: null, talla: "30×40", marco: "Negro", diseno: DISENOS[0], vista: "pared",
-    ocasion: OCASIONES.find(o => o.v === ocasion0) || null };
+function personalizado(d0, m0, campana = null) {
+  const hoy = new Date();
+  const s = { d: d0 || hoy.getDate(), m: m0 || hoy.getMonth() + 1, y: "", nombre: "", op: null, talla: "30×40", marco: "Negro", diseno: DISENOS[0], vista: "pared",
+    ocasion: OCASIONES.find(o => campana && o.k === campana.ocasion) || null, campana: campana && campana.aviso ? campana.k : "" };
   document.title = "El cielo de tu fecha · Helíaco";
   app.innerHTML = `<div class="page-width breadcrumb"><a href="#inicio">Inicio</a> / El cielo de tu fecha</div>
   <div class="page-width product">
@@ -888,12 +906,13 @@ function personalizado(d0, m0, ocasion0) {
     <div class="info">
       <div class="vendor">Helíaco · Personalizado</div>
       <h1>El cielo de tu fecha</h1>
-      <p class="subtitulo">Para un cumpleaños, un aniversario, San Valentín o cualquier día que queráis recordar.</p>
+      <p class="subtitulo">Con el día que os conocisteis, un cumpleaños, vuestra boda o cualquier fecha vuestra. Un regalo para San Valentín, Navidad o el Día de la Madre.</p>
       <div class="price" id="price"></div>
       <div class="tax">Impuestos incluidos. Envío gratis a la península.</div>
       <p class="estado">Prelanzamiento: las primeras unidades están en camino. Diséñalo ya y te avisamos en cuanto puedas pedirlo.</p>
+      ${campana && campana.aviso ? `<p class="aviso-campana">${esc(campana.aviso)}</p>` : ""}
       <form id="pf">
-        ${pillsHTML("Ocasión", OCASIONES.map(o => o.v), s.ocasion ? s.ocasion.v : "")}
+        ${pillsHTML("Ocasión", OCASIONES.map(o => o.v), s.ocasion ? s.ocasion.v : "", null, "¿Qué fecha es?")}
         <fieldset><legend>Fecha</legend><div class="row3">
           <label class="field"><span>Día</span><select id="pd"></select></label>
           <label class="field"><span>Mes</span><select id="pm">${MESES.map((x, i) => `<option value="${i + 1}" ${i + 1 === s.m ? "selected" : ""}>${x[0].toUpperCase() + x.slice(1)}</option>`).join("")}</select></label>
@@ -914,7 +933,7 @@ function personalizado(d0, m0, ocasion0) {
         <div class="buy"><button class="btn sec full" type="submit">Añadir al carrito</button><button class="shop-pay" type="button" id="comprarYa">Comprar ya</button></div>
       </form>
       <div style="margin-top:24px">
-        <details class="acc" open><summary>Cómo funciona</summary><p>El Hubble lleva desde 1990 fotografiando el cielo. Para cada día del año hay hasta cinco fotos suyas: la que elijas se hizo el mismo día y mes de vuestra fecha (un cumpleaños, un aniversario, San Valentín…), en algún año desde 1990, y su fecha real aparece en la ficha del diseño con margen blanco.</p></details>
+        <details class="acc" open><summary>Cómo funciona</summary><p>El Hubble lleva desde 1990 fotografiando el cielo. Para cada día del año hay hasta cinco fotos suyas: la que elijas se hizo el mismo día y mes de vuestra fecha (un cumpleaños, el día que os conocisteis, vuestra boda…), en algún año desde 1990, y su fecha real aparece en la ficha del diseño con margen blanco.</p></details>
         <details class="acc"><summary>Envíos y devoluciones</summary><p>Revisamos a mano cada cuadro personalizado antes de imprimirlo. Envío gratis a la península. Al llevar nombre y fecha, no admite devolución por desistimiento; si llega dañado, lo reponemos.</p></details>
       </div>
     </div>
@@ -994,7 +1013,7 @@ function personalizado(d0, m0, ocasion0) {
     if (["Tamaño", "Marco", "Diseño"].includes(e.target.name)) { if (s.vista === "ejemplo") s.vista = "pared"; pintar(); }
   });
   const pedir = () => abrirRegistro({ tipo: "personalizado", h: s.op.p.h, t: "El cielo de tu fecha", f: s.op.p.f, talla: s.talla, marco: s.marco,
-    ocasion: s.ocasion ? s.ocasion.v : "",
+    ocasion: s.ocasion ? s.ocasion.k : "", campana: s.campana,
     precio: PRECIOS.per[s.talla], d: s.d, m: s.m, y: s.y, nombre: s.nombre, diseno: s.diseno.k,
     extra: `${s.ocasion ? s.ocasion.v + " · " : ""}${fechaLarga(s.d, s.m, s.y)} · ${s.op.p.t} (${s.op.y})${s.nombre ? " · " + s.nombre : ""} · ${s.diseno.v}` });
   $("#pf").addEventListener("submit", e => { e.preventDefault(); pedir(); });
@@ -1008,7 +1027,7 @@ function preguntas() {
   const qa = [
     ["¿Cuándo podré pedir mi cuadro?", "Estamos esperando las primeras unidades para comprobar la impresión y el marco antes de abrir. Si te apuntas, te escribimos en cuanto se pueda pedir."],
     ["¿Son fotos reales?", "Sí. Todas son fotografías del telescopio espacial Hubble publicadas por NASA y ESA. Ni dibujos ni inteligencia artificial. Cada cuadro indica qué es, cuándo se tomó y su crédito."],
-    ["¿Para qué fechas sirve el personalizado?", "Para cualquier día que queráis recordar: un cumpleaños, un aniversario, San Valentín, el día que os conocisteis, una boda o el nacimiento de un hijo. Eliges el día y el mes, y el nombre o los nombres que quieres en el cuadro."],
+    ["¿Para qué fechas sirve el personalizado?", "Para cualquier día que sea vuestro: un cumpleaños, el día que os conocisteis, vuestro aniversario, una boda o el nacimiento de un hijo. Es un buen regalo para San Valentín, Navidad o el Día de la Madre o del Padre, pero en el cuadro va vuestra fecha, no la del día del regalo. Eliges el día y el mes, y el nombre o los nombres que quieres en el cuadro."],
     ["¿Qué foto sale en mi fecha?", "Una foto que el Hubble hizo ese mismo día y mes, en algún año desde 1990. No es el cielo del momento exacto, sino lo que el Hubble estaba mirando un día como ese. Hay hasta cinco fotos para cada día del año, y eliges la que más te guste."],
     ["¿Qué tamaños y marcos hay?", "13×18, 15×20, 20×25, 30×40 y 50×70 cm, con marco negro, blanco, de madera natural o de madera oscura. Cada foto solo se ofrece en los tamaños en los que el original tiene resolución de sobra para imprimirse nítido."],
     ["¿Cuánto cuestan?", `Los cuadros del catálogo, desde ${euros(PRECIOS.cat["13×18"])} (13×18) hasta ${euros(PRECIOS.cat["50×70"])} (50×70). El personalizado, desde ${euros(PRECIOS.per["13×18"])}. Impuestos incluidos y envío gratis a la península.`],
@@ -1063,7 +1082,8 @@ function etiquetas(c) {
     t.push(c.tipo === "personalizado" ? "interes-personalizado" : `interes-${c.h}`);
     t.push(`tamano-${c.talla.replace("×", "x")}`, `marco-${norm(c.marco).replace(/\s+/g, "-")}`);
     if (c.tipo === "personalizado") t.push(`dia-${pad(c.d)}-${pad(c.m)}`, `foto-${c.h}`, `diseno-${c.diseno.toLowerCase()}`);
-    if (c.ocasion) t.push(`ocasion-${norm(c.ocasion).replace(/\s+/g, "-")}`);
+    if (c.ocasion) t.push(`ocasion-${c.ocasion}`);
+    if (c.campana) t.push(`campana-${c.campana}`);
   }
   return t.join(", ");
 }
