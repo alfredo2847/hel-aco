@@ -279,6 +279,28 @@ details.acc a { color: var(--fg); }
 .dC .lab .when { font: 500 2.3cqw var(--f-fecha); letter-spacing: .3em; padding-left: .3em; }
 .dC .lab .what { font: 2.6cqw/1.3 var(--f-ficha); color: #5b6070; }
 
+/* El cuadro en un salón, a escala */
+.escena { position: relative; width: 100%; aspect-ratio: 1080 / 1350; overflow: hidden; background: #e6ddd0; }
+.escena .fondo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.escena .colgado { position: absolute; }
+.escena .cuadro, .escena .cuadro.h { max-width: none; width: 100%; box-shadow: 0.35em 0.5em 0.9em rgba(70, 50, 30, .34), 0.05em 0.1em 0.2em rgba(0, 0, 0, .25); }
+.escena .colgado::after { content: ""; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
+  background: linear-gradient(118deg, rgba(255, 236, 200, 0) 30%, rgba(255, 236, 200, .16) 46%, rgba(255, 236, 200, 0) 62%); }
+.stage.v-pared, .stage.v-ejemplo { padding: 0; background: none; }
+.stage .foto-entera.ejemplo { max-height: none; width: 100%; }
+.thumbs button > .escena { width: 100%; }
+.thumbs.t5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.card .media.producto { background: #e9e1d5 url(img/pared.jpg) center / cover; display: grid; place-items: center; }
+.card .media.producto .cuadro { width: 60%; box-shadow: 4px 7px 12px rgba(70, 50, 30, .35), 0 1px 2px rgba(0, 0, 0, .3); transition: transform .5s; }
+.card .media.producto .cuadro.h { width: 80%; }
+.card:hover .media.producto .cuadro { transform: scale(1.04); }
+.card:hover .media.producto img { transform: none; }
+.en-casa { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.en-casa figure { margin: 0; display: grid; gap: 10px; }
+.en-casa img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+.en-casa figcaption { font-size: 14px; color: var(--muted); }
+@media (max-width: 560px) { .en-casa { grid-template-columns: minmax(0, 1fr); } }
+
 /* Ventana de prelanzamiento */
 .modal-fondo { position: fixed; inset: 0; background: rgba(5,8,15,.55); z-index: 50; display: grid; place-items: center; padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)); overflow: auto; }
 .modal { background: var(--bg); width: min(480px, 100%); padding: 32px 28px 28px; position: relative; box-shadow: 0 30px 60px -20px rgba(0,0,0,.5); max-height: 100%; overflow: auto; }
@@ -524,6 +546,19 @@ function cuadroHTML({ p, talla, marco, hz = p.hz, diseno = null, nombre = "", fe
   }
   return `<div class="cuadro${hz ? " h" : ""}" data-marco="${esc(marco)}" style="--moldura:${moldura}%">${dentro}</div>`;
 }
+// El cuadro colgado en un salón, a escala: la pared es la foto del salón sin cuadro (img/salon-vacio.jpg, 1080×1350).
+// Los tamaños de mesa (13×18 y 15×20) salen de pie sobre el mueble; el resto, colgados en el centro de la pared.
+const ESCENA = { w: 1080, h: 1350, pxcm: 7.6, cx: 576, cy: 640, mueble: 1108, cxMesa: 590 };
+function escenaHTML(a) {
+  const { w, h } = proporcion(a.talla, a.hz ?? a.p.hz);
+  const W = (w + 2 * MOLDURA_CM) * ESCENA.pxcm, H = (h + 2 * MOLDURA_CM) * ESCENA.pxcm;
+  const deMesa = a.talla === "13×18" || a.talla === "15×20";
+  const left = (deMesa ? ESCENA.cxMesa : ESCENA.cx) - W / 2, top = deMesa ? ESCENA.mueble - H : ESCENA.cy - H / 2;
+  const pct = (v, t) => (v / t * 100).toFixed(2) + "%";
+  return `<div class="escena"><img class="fondo" src="img/salon-vacio.jpg" alt="" decoding="async">
+    <div class="colgado" style="left:${pct(left, ESCENA.w)};top:${pct(top, ESCENA.h)};width:${pct(W, ESCENA.w)}">${cuadroHTML({ ...a, ancho: a.ancho || "(max-width: 990px) 45vw, 260px" })}</div></div>`;
+}
+
 // Texto blanco o negro según el brillo de la foto detrás del nombre (como en el archivo de impresión)
 function ajustarTono(root) {
   root.querySelectorAll(".lamina.dA, .lamina.dB").forEach(lam => {
@@ -549,7 +584,7 @@ function ajustarTono(root) {
 /* ---------- Tarjetas ---------- */
 function cardHTML(p) {
   const badge = p.tam.includes("50×70") ? "" : `<span class="badge">Hasta ${p.tam[p.tam.length - 1]}</span>`;
-  return `<a class="card" href="#p-${p.h}"><div class="media">${imgTag(p, "(max-width: 990px) 46vw, 280px")}${badge}</div>
+  return `<a class="card" href="#p-${p.h}"><div class="media producto">${cuadroHTML({ p, talla: "30×40", marco: "Negro", ancho: "(max-width: 990px) 34vw, 200px" })}${badge}</div>
     <span class="title">${esc(p.t)}</span><span class="price">Desde ${desde(p)}</span></a>`;
 }
 
@@ -618,6 +653,14 @@ function portada() {
   <section class="s"><div class="page-width">
     <div class="s-head"><h2>Lo más elegido del Hubble</h2><a href="#hubble">Ver todo</a></div>
     <div class="grid">${DEST.map(cardHTML).join("")}</div>
+  </div></section>
+
+  <section class="s top0"><div class="page-width">
+    <div class="s-head"><h2>Así quedan en casa</h2><a href="#personalizado">Diseñar el mío</a></div>
+    <div class="en-casa">
+      <figure><img src="img/galeria.jpg" alt="Composición de cuadros de Helíaco sobre un aparador" loading="lazy"><figcaption>Una pared de nebulosas, con el cuadro personalizado de Martina en el centro.</figcaption></figure>
+      <figure><img src="img/manuel.jpg" alt="Cuadro personalizado de Helíaco con el nombre Manuel" loading="lazy"><figcaption>El cielo de su cumpleaños: la galaxia que fotografió el Hubble un 7 de mayo, con su nombre.</figcaption></figure>
+    </div>
   </div></section>
 
   <section class="s top0"><div class="page-width">
@@ -745,7 +788,7 @@ function textoCuando(p) {
 
 /* ---------- Ficha de un cuadro del catálogo ---------- */
 function producto(p) {
-  const s = { talla: p.tam.includes("30×40") ? "30×40" : p.tam[p.tam.length - 1], marco: "Negro", vista: "cuadro" };
+  const s = { talla: p.tam.includes("30×40") ? "30×40" : p.tam[p.tam.length - 1], marco: "Negro", vista: "pared" };
   const primerDia = p.dias[0];
   const tamTxt = p.tam.length === 1 ? p.tam[0] : p.tam.slice(0, -1).join(", ") + " y " + p.tam[p.tam.length - 1];
   const parecidas = P.filter(x => x.tipo === p.tipo && x.h !== p.h && x.tam.length >= 3);
@@ -783,17 +826,22 @@ function producto(p) {
     <div class="grid">${quizas.map(cardHTML).join("")}</div>
   </div></section>`;
   const pintar = () => {
-    $("#stage").innerHTML = s.vista === "cuadro" ? cuadroHTML({ p, talla: s.talla, marco: s.marco })
-      : `<img class="foto-entera" src="${src(p.f, 1600)}" srcset="${srcset(p.f)}" sizes="(max-width: 990px) 90vw, 640px" alt="${esc(p.t)}"><a class="zoom-nota" href="${src(p.f, 2400)}" target="_blank" rel="noopener">Ver a 2400 px ↗</a>`;
-    // tres marcos de muestra (el elegido primero) y la foto completa
-    const muestras = [s.marco, ...MARCOS.map(m => m.v).filter(v => v !== s.marco)].slice(0, 3);
-    $("#thumbs").innerHTML = muestras.map(v => `<button type="button" data-marco="${v}" class="${s.vista === "cuadro" && v === s.marco ? "on" : ""}" aria-label="Vista previa con marco ${v}"><div class="mini${p.hz ? " h" : ""}">${cuadroHTML({ p, talla: s.talla, marco: v, ancho: "120px" })}</div></button>`).join("")
-      + `<button type="button" data-foto="1" class="${s.vista === "foto" ? "on" : ""}" aria-label="Foto completa">${imgTag(p, "120px")}</button>`;
-    $("#thumbs").querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
-      if (b.dataset.foto) s.vista = "foto";
-      else { s.vista = "cuadro"; s.marco = b.dataset.marco; $(`#pf input[name="Marco"][value="${s.marco}"]`).checked = true; }
-      pintar();
-    }));
+    const args = { p, talla: s.talla, marco: s.marco };
+    const vistas = {
+      pared: () => escenaHTML(args),
+      cuadro: () => cuadroHTML(args),
+      foto: () => `<img class="foto-entera" src="${src(p.f, 1600)}" srcset="${srcset(p.f)}" sizes="(max-width: 990px) 90vw, 640px" alt="${esc(p.t)}"><a class="zoom-nota" href="${src(p.f, 2400)}" target="_blank" rel="noopener">Ver a 2400 px ↗</a>`,
+      ejemplo: () => `<img class="foto-entera ejemplo" src="img/galeria.jpg" alt="Composición de cuadros de Helíaco en un salón"><span class="zoom-nota">Ejemplo de composición</span>`,
+    };
+    $("#stage").className = "stage v-" + s.vista;
+    $("#stage").innerHTML = vistas[s.vista]();
+    $("#thumbs").innerHTML = [
+      ["pared", "En la pared, a escala", escenaHTML({ ...args, ancho: "60px" })],
+      ["cuadro", "El cuadro", `<div class="mini${p.hz ? " h" : ""}">${cuadroHTML({ ...args, ancho: "120px" })}</div>`],
+      ["foto", "Foto completa", imgTag(p, "120px")],
+      ["ejemplo", "Ejemplo de composición", `<img src="img/galeria.jpg" alt="" loading="lazy">`],
+    ].map(([v, t, h]) => `<button type="button" data-vista="${v}" class="${s.vista === v ? "on" : ""}" aria-label="${t}">${h}</button>`).join("");
+    $("#thumbs").querySelectorAll("button").forEach(b => b.addEventListener("click", () => { s.vista = b.dataset.vista; pintar(); }));
     $("#price").textContent = euros(PRECIOS.cat[s.talla]);
     $("#uso").textContent = USO[s.talla];
     $("#sel-Tamaño").textContent = s.talla + " cm"; $("#sel-Marco").textContent = s.marco;
@@ -801,7 +849,8 @@ function producto(p) {
   $("#pf").addEventListener("change", e => {
     if (e.target.name === "Tamaño") s.talla = e.target.value;
     if (e.target.name === "Marco") s.marco = e.target.value;
-    s.vista = "cuadro"; pintar();
+    if (s.vista !== "cuadro") s.vista = "pared";
+    pintar();
   });
   const pedir = () => abrirRegistro({ tipo: "producto", h: p.h, t: p.t, f: p.f, talla: s.talla, marco: s.marco, precio: PRECIOS.cat[s.talla] });
   $("#pf").addEventListener("submit", e => { e.preventDefault(); pedir(); });
@@ -811,7 +860,7 @@ function producto(p) {
 
 /* ---------- El cielo de tu cumpleaños (personalizado) ---------- */
 function personalizado(d0, m0) {
-  const s = { d: d0 || 14, m: m0 || 2, y: "", nombre: "", op: null, talla: "30×40", marco: "Negro", diseno: DISENOS[0] };
+  const s = { d: d0 || 14, m: m0 || 2, y: "", nombre: "", op: null, talla: "30×40", marco: "Negro", diseno: DISENOS[0], vista: "pared" };
   document.title = "El cielo de tu cumpleaños · Helíaco";
   app.innerHTML = `<div class="page-width breadcrumb"><a href="#inicio">Inicio</a> / El cielo de tu cumpleaños</div>
   <div class="page-width product">
@@ -868,13 +917,18 @@ function personalizado(d0, m0) {
     const fecha = `${pad(s.d)} · ${pad(s.m)} · ${s.y || op.y}`;
     const ficha = `${p.t} · Hubble la fotografió el ${fechaLarga(op.d, op.m, op.y)}`;
     const args = { p, talla: s.talla, marco: s.marco, hz: false, nombre, fecha, ficha };
-    $("#stage").innerHTML = cuadroHTML({ ...args, diseno: s.diseno });
-    $("#thumbs").innerHTML = DISENOS.map(x => `<button type="button" data-d="${x.k}" class="${x.k === s.diseno.k ? "on" : ""}" aria-label="Diseño ${x.v}"><div class="mini">${cuadroHTML({ ...args, diseno: x, ancho: "120px" })}</div></button>`).join("")
-      + `<button type="button" data-foto="1" aria-label="Ver la foto a 2400 px">${imgTag(p, "120px")}</button>`;
+    $("#stage").className = "stage v-" + s.vista;
+    $("#stage").innerHTML = s.vista === "pared" ? escenaHTML({ ...args, diseno: s.diseno })
+      : s.vista === "ejemplo" ? `<img class="foto-entera ejemplo" src="img/manuel.jpg" alt="Cuadro personalizado de Helíaco con nombre y fecha en un salón"><span class="zoom-nota">Ejemplo: diseño a sangre centrado</span>`
+      : cuadroHTML({ ...args, diseno: s.diseno });
+    $("#thumbs").className = "thumbs t5";
+    $("#thumbs").innerHTML = `<button type="button" data-vista="pared" class="${s.vista === "pared" ? "on" : ""}" aria-label="En la pared, a escala">${escenaHTML({ ...args, diseno: s.diseno, ancho: "60px" })}</button>`
+      + DISENOS.map(x => `<button type="button" data-d="${x.k}" class="${s.vista === "cerca" && x.k === s.diseno.k ? "on" : ""}" aria-label="Diseño ${x.v}"><div class="mini">${cuadroHTML({ ...args, diseno: x, ancho: "120px" })}</div></button>`).join("")
+      + `<button type="button" data-vista="ejemplo" class="${s.vista === "ejemplo" ? "on" : ""}" aria-label="Ejemplo en un salón"><img src="img/manuel.jpg" alt="" loading="lazy"></button>`;
     $("#thumbs").querySelectorAll("button[data-d]").forEach(b => b.addEventListener("click", () => {
-      s.diseno = DISENOS.find(x => x.k === b.dataset.d); $(`#pf input[name="Diseño"][value="${s.diseno.v}"]`).checked = true; pintar();
+      s.diseno = DISENOS.find(x => x.k === b.dataset.d); s.vista = "cerca"; $(`#pf input[name="Diseño"][value="${s.diseno.v}"]`).checked = true; pintar();
     }));
-    $("#thumbs").querySelector("[data-foto]").addEventListener("click", () => window.open(src(p.f, 2400), "_blank", "noopener"));
+    $("#thumbs").querySelectorAll("button[data-vista]").forEach(b => b.addEventListener("click", () => { s.vista = b.dataset.vista; pintar(); }));
     $("#price").textContent = euros(PRECIOS.per[s.talla]);
     $("#uso").textContent = USO[s.talla] + (p.tam.length < 5 ? ` · Esta foto llega hasta ${p.tam[p.tam.length - 1]} cm.` : "");
     $("#sel-Tamaño").textContent = s.talla + " cm"; $("#sel-Marco").textContent = s.marco; $("#sel-Diseño").textContent = s.diseno.v;
@@ -898,7 +952,7 @@ function personalizado(d0, m0) {
     if (e.target.name === "Tamaño") s.talla = e.target.value;
     if (e.target.name === "Marco") s.marco = e.target.value;
     if (e.target.name === "Diseño") s.diseno = DISENOS.find(x => x.v === e.target.value);
-    if (["Tamaño", "Marco", "Diseño"].includes(e.target.name)) pintar();
+    if (["Tamaño", "Marco", "Diseño"].includes(e.target.name)) { if (s.vista === "ejemplo") s.vista = "pared"; pintar(); }
   });
   const pedir = () => abrirRegistro({ tipo: "personalizado", h: s.op.p.h, t: "El cielo de tu cumpleaños", f: s.op.p.f, talla: s.talla, marco: s.marco,
     precio: PRECIOS.per[s.talla], d: s.d, m: s.m, y: s.y, nombre: s.nombre, diseno: s.diseno.k,
