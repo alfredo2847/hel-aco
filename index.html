@@ -301,6 +301,15 @@ details.acc a { color: var(--fg); }
 .en-casa figcaption { font-size: 14px; color: var(--muted); }
 @media (max-width: 560px) { .en-casa { grid-template-columns: minmax(0, 1fr); } }
 
+/* Segunda vista previa del personalizado: solo en pantallas estrechas, donde la galería no se queda fija */
+.repaso { display: none; }
+@media (max-width: 990px) {
+  .repaso { display: grid; gap: 10px; justify-items: center; background: var(--soft); padding: 22px 16px 16px; margin: 4px 0 18px; text-align: center; }
+  .repaso-titulo { font: 500 24px/1.1 var(--f-head); }
+  .repaso-cuadro { width: min(78%, 340px); display: grid; justify-items: center; }
+  .repaso-datos { font-size: 14px; color: var(--muted); }
+}
+
 /* Ventana de prelanzamiento */
 .modal-fondo { position: fixed; inset: 0; background: rgba(5,8,15,.55); z-index: 50; display: grid; place-items: center; padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)); overflow: auto; }
 .modal { background: var(--bg); width: min(480px, 100%); padding: 32px 28px 28px; position: relative; box-shadow: 0 30px 60px -20px rgba(0,0,0,.5); max-height: 100%; overflow: auto; }
@@ -883,6 +892,12 @@ function personalizado(d0, m0) {
         ${pillsHTML("Tamaño", D.tamanos, s.talla)}
         <p class="uso" id="uso"></p>
         ${pillsHTML("Marco", MARCOS.map(m => m.v), s.marco, MARCOS.map(m => m.c))}
+        <div class="repaso" aria-live="polite">
+          <p class="repaso-titulo">Así queda tu cuadro</p>
+          <div class="repaso-cuadro" id="repasoCuadro"></div>
+          <p class="repaso-datos" id="repasoDatos"></p>
+          <button type="button" class="link" id="verPared">Verlo colgado en la pared ↑</button>
+        </div>
         <div class="buy"><button class="btn sec full" type="submit">Añadir al carrito</button><button class="shop-pay" type="button" id="comprarYa">Comprar ya</button></div>
       </form>
       <div style="margin-top:24px">
@@ -929,10 +944,13 @@ function personalizado(d0, m0) {
       s.diseno = DISENOS.find(x => x.k === b.dataset.d); s.vista = "cerca"; $(`#pf input[name="Diseño"][value="${s.diseno.v}"]`).checked = true; pintar();
     }));
     $("#thumbs").querySelectorAll("button[data-vista]").forEach(b => b.addEventListener("click", () => { s.vista = b.dataset.vista; pintar(); }));
+    // segunda vista previa, al final de las opciones (solo se ve en el móvil, donde la de arriba queda lejos)
+    $("#repasoCuadro").innerHTML = cuadroHTML({ ...args, diseno: s.diseno, ancho: "75vw" });
+    $("#repasoDatos").textContent = `${s.talla} cm · Marco ${s.marco.toLowerCase()} · ${s.diseno.v} · ${euros(PRECIOS.per[s.talla])}`;
     $("#price").textContent = euros(PRECIOS.per[s.talla]);
     $("#uso").textContent = USO[s.talla] + (p.tam.length < 5 ? ` · Esta foto llega hasta ${p.tam[p.tam.length - 1]} cm.` : "");
     $("#sel-Tamaño").textContent = s.talla + " cm"; $("#sel-Marco").textContent = s.marco; $("#sel-Diseño").textContent = s.diseno.v;
-    ajustarTono($("#stage")); ajustarTono($("#thumbs"));
+    ajustarTono($("#stage")); ajustarTono($("#thumbs")); ajustarTono($("#repasoCuadro"));
   };
   const cargar = () => {
     s.m = +pm.value; s.d = +pd.value;
@@ -944,6 +962,10 @@ function personalizado(d0, m0) {
     $("#opts").querySelectorAll("input").forEach(i => i.addEventListener("change", () => { s.op = ops[+i.value]; pintar(); }));
     pintar();
   };
+  $("#verPared").addEventListener("click", () => {
+    s.vista = "pared"; pintar();
+    window.scrollTo({ top: $("#stage").getBoundingClientRect().top + scrollY - 90, behavior: "smooth" });
+  });
   pm.addEventListener("change", () => { llenarDias(); cargar(); });
   pd.addEventListener("change", cargar);
   $("#fNombre").addEventListener("input", e => { s.nombre = e.target.value.trim(); pintar(); });
